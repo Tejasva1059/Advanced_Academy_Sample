@@ -1,0 +1,36 @@
+services:
+  # 1. FastAPI Backend Web Service
+  - type: web
+    name: school-portal-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: '["https://school-portal-frontend.vercel.app", "http://localhost:5173"]'
+
+  # 2. React Vite Frontend Static Site
+  - type: web
+    name: school-portal-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: school-portal-backend
+          property: host
