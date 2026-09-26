@@ -22,26 +22,26 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
     """
     buffer = io.BytesIO()
     # A4 dimensions: 595.27 x 841.89 points
-    # Usable width: 595.27 - (24 * 2) = 547.27 points
-    # Usable height: 841.89 - (18 * 2) = 805.89 points
+    # Usable width: 595.27 - (22 * 2) = 551.27 points
+    # Usable height: 841.89 - (16 * 2) = 809.89 points
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        leftMargin=24,
-        rightMargin=24,
-        topMargin=18,
-        bottomMargin=18,
+        leftMargin=22,
+        rightMargin=22,
+        topMargin=16,
+        bottomMargin=16,
     )
 
     styles = getSampleStyleSheet()
 
-    # Typography styles with enhanced proportion to span the full A4 page
+    # Typography styles
     school_title_style = ParagraphStyle(
         "SchoolTitle",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
-        fontSize=18,
-        leading=21,
+        fontSize=18.5,
+        leading=21.5,
         alignment=TA_CENTER,
         textColor=colors.HexColor("#1a4329"),
     )
@@ -76,16 +76,16 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
         "StudentLabel",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
-        fontSize=9,
-        leading=12,
+        fontSize=8.5,
+        leading=11.5,
         textColor=colors.black,
     )
     student_val = ParagraphStyle(
         "StudentVal",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
-        fontSize=9,
-        leading=12,
+        fontSize=8.5,
+        leading=11.5,
         textColor=colors.black,
     )
     th_title = ParagraphStyle(
@@ -101,10 +101,19 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
         "THSub",
         parent=styles["Normal"],
         fontName="Helvetica",
-        fontSize=7.5,
-        leading=9.5,
+        fontSize=7,
+        leading=8.5,
         alignment=TA_CENTER,
-        textColor=colors.HexColor("#334155"),
+        textColor=colors.HexColor("#1e293b"),
+    )
+    th_sub_max = ParagraphStyle(
+        "THSubMax",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=7,
+        leading=8.5,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor("#64748b"),
     )
     td_left = ParagraphStyle(
         "TDLeft",
@@ -137,8 +146,8 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
         "GradeScaleText",
         parent=styles["Normal"],
         fontName="Helvetica",
-        fontSize=8,
-        leading=10,
+        fontSize=7.5,
+        leading=9.5,
         textColor=colors.black,
     )
 
@@ -158,11 +167,25 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
 
     cbse_img = None
     if os.path.exists(cbse_logo_path):
-        cbse_img = Image(cbse_logo_path, width=1.0 * inch, height=1.0 * inch)
+        cbse_img = Image(cbse_logo_path, width=0.95 * inch, height=0.95 * inch)
 
     school_img = None
     if os.path.exists(school_logo_path):
-        school_img = Image(school_logo_path, width=1.0 * inch, height=1.0 * inch)
+        school_img = Image(school_logo_path, width=0.95 * inch, height=0.95 * inch)
+
+    total_w = 551.27
+
+    # 0. Gold Header Banner across the top
+    gold_bar = Table([[""]], colWidths=[total_w], rowHeights=[3.5])
+    gold_bar.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f6d860")),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+    ]))
+    story.append(gold_bar)
+    story.append(Spacer(1, 4))
 
     # 1. School Header Table (3 columns: CBSE Logo, Details, School Logo)
     center_elements = [
@@ -185,7 +208,7 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
         [cbse_img or "", center_elements, school_img or ""]
     ]
 
-    header_table = Table(header_table_data, colWidths=[72, 403.27, 72])
+    header_table = Table(header_table_data, colWidths=[72, 407.27, 72])
     header_table.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("ALIGN", (0, 0), (0, 0), "CENTER"),
@@ -195,7 +218,7 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
         ("TOPPADDING", (0, 0), (-1, -1), 1),
     ]))
     story.append(header_table)
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 5))
 
     # 2. Session and Title
     session_name = session.get("session_name", "2026-27")
@@ -204,7 +227,7 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
     story.append(Paragraph("Report Card : Annual Exam", session_title_style))
     story.append(Spacer(1, 6))
 
-    # 3. Student Details Table
+    # 3. Student Details Table with Dotted Underlines
     class_str = student.get("class_name", "")
     roman_map = {
         "1st": "I A", "2nd": "II A", "3rd": "III A", "4th": "IV A", "5th": "V A",
@@ -245,13 +268,16 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
         ],
     ]
 
-    student_table = Table(student_box_data, colWidths=[85, 188, 80, 194.27])
+    # colWidths: 90 + 185.63 + 85 + 190.64 = 551.27
+    student_table = Table(student_box_data, colWidths=[90, 185.63, 85, 190.64])
     student_table.setStyle(TableStyle([
         ("BOX", (0, 0), (-1, -1), 0.75, colors.black),
-        ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.transparent),
-        ("TOPPADDING", (0, 0), (-1, -1), 4.5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        # Dotted underline under student data fields
+        ("LINEBELOW", (1, 0), (1, -1), 0.5, colors.HexColor("#475569"), 0, (1, 2)),
+        ("LINEBELOW", (3, 0), (3, -1), 0.5, colors.HexColor("#475569"), 0, (1, 2)),
     ]))
     story.append(student_table)
     story.append(Spacer(1, 8))
@@ -271,8 +297,8 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
             all_subjects.append(sname)
             seen.add(sname)
 
-    # Column widths: 117.27 + (32+32+35+42+42+33) + (32+32+35+42+42+33) = 117.27 + 216 + 216 = 547.27
-    col_widths = [117.27, 32, 32, 35, 42, 42, 33, 32, 32, 35, 42, 42, 33]
+    # Column widths: 119.27 + (32+32+35+42+42+33) + (32+32+35+42+42+33) = 119.27 + 216 + 216 = 551.27
+    col_widths = [119.27, 32, 32, 35, 42, 42, 33, 32, 32, 35, 42, 42, 33]
 
     # Header Row 1: Groups
     header_r1 = [
@@ -281,26 +307,43 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
         Paragraph("<b>Term II (100 marks)</b>", th_title), "", "", "", "", ""
     ]
 
-    # Header Row 2: Sub-columns
+    # Header Row 2: Sub-column Names
     header_r2 = [
         "",
-        Paragraph("Per<br/>Test<br/><font size=6.5>10</font>", th_sub),
-        Paragraph("Note<br/>Book<br/><font size=6.5>5</font>", th_sub),
-        Paragraph("Sub<br/>Enrich<br/><font size=6.5>5</font>", th_sub),
-        Paragraph("Half<br/>Yearly<br/><font size=6.5>80</font>", th_sub),
-        Paragraph("Marks<br/>Obt.<br/><font size=6.5>100</font>", th_sub),
+        Paragraph("Per<br/>Test", th_sub),
+        Paragraph("Note<br/>Book", th_sub),
+        Paragraph("Sub<br/>Enrich<br/>ment", th_sub),
+        Paragraph("Half<br/>Yearly<br/>Exam", th_sub),
+        Paragraph("Marks<br/>Obtained", th_sub),
         Paragraph("Grade", th_title),
-        Paragraph("Per<br/>Test<br/><font size=6.5>10</font>", th_sub),
-        Paragraph("Note<br/>Book<br/><font size=6.5>5</font>", th_sub),
-        Paragraph("Sub<br/>Enrich<br/><font size=6.5>5</font>", th_sub),
-        Paragraph("Annual<br/>Exam<br/><font size=6.5>80</font>", th_sub),
-        Paragraph("Marks<br/>Obt.<br/><font size=6.5>100</font>", th_sub),
+        Paragraph("Per<br/>Test", th_sub),
+        Paragraph("Note<br/>Book", th_sub),
+        Paragraph("Sub<br/>Enrich<br/>ment", th_sub),
+        Paragraph("Annual<br/>Exam", th_sub),
+        Paragraph("Marks<br/>Obtained", th_sub),
         Paragraph("Grade", th_title),
     ]
 
-    scholastic_rows = [header_r1, header_r2]
+    # Header Row 3: Sub-column Maximum Marks (Divided by line)
+    header_r3 = [
+        "",
+        Paragraph("10", th_sub_max),
+        Paragraph("5", th_sub_max),
+        Paragraph("5", th_sub_max),
+        Paragraph("80", th_sub_max),
+        Paragraph("100", th_sub_max),
+        "",
+        Paragraph("10", th_sub_max),
+        Paragraph("5", th_sub_max),
+        Paragraph("5", th_sub_max),
+        Paragraph("80", th_sub_max),
+        Paragraph("100", th_sub_max),
+        "",
+    ]
 
-    # Dynamically calculate padding based on number of subjects to fit page gracefully
+    scholastic_rows = [header_r1, header_r2, header_r3]
+
+    # Dynamic padding for subjects
     subj_pad = 5.0 if len(all_subjects) <= 6 else 3.5
 
     for sname in all_subjects:
@@ -341,17 +384,19 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
     scholastic_table = Table(scholastic_rows, colWidths=col_widths)
     scholastic_table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.6, colors.black),
-        ("SPAN", (0, 0), (0, 1)),
-        ("SPAN", (1, 0), (6, 0)),
-        ("SPAN", (7, 0), (12, 0)),
+        ("SPAN", (0, 0), (0, 2)),      # Subjects col spans row 0, 1, 2
+        ("SPAN", (1, 0), (6, 0)),      # Term 1 title spans cols 1-6 in row 0
+        ("SPAN", (7, 0), (12, 0)),     # Term 2 title spans cols 7-12 in row 0
+        ("SPAN", (6, 1), (6, 2)),      # Grade Term 1 spans row 1 & 2
+        ("SPAN", (12, 1), (12, 2)),    # Grade Term 2 spans row 1 & 2
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING", (0, 0), (-1, 1), 3.5),
-        ("BOTTOMPADDING", (0, 0), (-1, 1), 3.5),
-        ("TOPPADDING", (0, 2), (-1, -1), subj_pad),
-        ("BOTTOMPADDING", (0, 2), (-1, -1), subj_pad),
-        ("LEFTPADDING", (0, 0), (-1, -1), 2.5),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 2.5),
-        ("BACKGROUND", (0, 0), (-1, 1), colors.HexColor("#f8fafc")),
+        ("TOPPADDING", (0, 0), (-1, 2), 2),
+        ("BOTTOMPADDING", (0, 0), (-1, 2), 2),
+        ("TOPPADDING", (0, 3), (-1, -1), subj_pad),
+        ("BOTTOMPADDING", (0, 3), (-1, -1), subj_pad),
+        ("LEFTPADDING", (0, 0), (-1, -1), 2),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+        ("BACKGROUND", (0, 0), (-1, 2), colors.HexColor("#f8fafc")),
     ]))
     story.append(scholastic_table)
     story.append(Spacer(1, 8))
@@ -384,16 +429,17 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
         ],
     ]
 
-    co_table = Table(co_scholastic_data, colWidths=[226, 47.63, 226, 47.64])
+    # colWidths: 228 + 47.63 + 228 + 47.64 = 551.27
+    co_table = Table(co_scholastic_data, colWidths=[228, 47.63, 228, 47.64])
     co_table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.6, colors.black),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING", (0, 0), (-1, -1), 4.5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f8fafc")),
     ]))
     story.append(co_table)
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 7))
 
     # 6. Discipline Table
     discipline_data = [
@@ -404,15 +450,15 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
             Paragraph("A", td_center_bold),
         ]
     ]
-    disc_table = Table(discipline_data, colWidths=[226, 47.63, 226, 47.64])
+    disc_table = Table(discipline_data, colWidths=[228, 47.63, 228, 47.64])
     disc_table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.6, colors.black),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING", (0, 0), (-1, -1), 4.5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
     ]))
     story.append(disc_table)
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 7))
 
     # 7. Teacher Remarks & Promotion
     teacher_remark = data.get("class_teacher_remark") or "Excellent! Keep up the good work!"
@@ -422,7 +468,7 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
         [Paragraph(f"<b>Class Teacher's Remark :</b>  {teacher_remark}", td_left)],
         [Paragraph(f"<b>Promoted to Class :</b>  <u>{promoted_class}</u>", td_left)],
     ]
-    remarks_table = Table(remarks_data, colWidths=[547.27])
+    remarks_table = Table(remarks_data, colWidths=[total_w])
     remarks_table.setStyle(TableStyle([
         ("BOX", (0, 0), (-1, -1), 0.6, colors.black),
         ("TOPPADDING", (0, 0), (-1, -1), 4.5),
@@ -432,23 +478,23 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
     story.append(remarks_table)
     story.append(Spacer(1, 14))
 
-    # 8. Date and Signatures
-    date_val = data.get("date_str") or "March 24, 2027"
+    # 8. Date and Signatures with Dotted Date Underline
+    date_val = data.get("date_str") or "March 24, 2023"
     sig_data = [
         [
-            Paragraph(f"<b>Date :</b> {date_val}", td_left),
+            Paragraph(f"<b>Date :</b> <u>{date_val}</u>", td_left),
             Paragraph("<b>Class Teacher</b>", th_title),
             Paragraph("<b>Principal</b>", ParagraphStyle("RightSig", parent=th_title, alignment=TA_RIGHT)),
         ]
     ]
-    sig_table = Table(sig_data, colWidths=[180, 187.27, 180])
+    sig_table = Table(sig_data, colWidths=[180, 191.27, 180])
     sig_table.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "BOTTOM"),
-        ("TOPPADDING", (0, 0), (-1, -1), 18),
+        ("TOPPADDING", (0, 0), (-1, -1), 16),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
     ]))
     story.append(sig_table)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 9))
 
     # 9. 8-Point Grading Scale Table at Bottom
     story.append(
@@ -460,20 +506,20 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
     story.append(Spacer(1, 3))
 
     scale_headers = ["Range (%)", "91-100", "81-90", "71-80", "61-70", "51-60", "41-50", "33-40", "00-32"]
-    scale_grades = ["Grade", "A1", "A2", "B1", "B2", "C1", "C2", "D", "E\n(Needs Imp.)"]
+    scale_grades = ["Grade", "A1", "A2", "B1", "B2", "C1", "C2", "D", "E\n(Needs Improvement)"]
 
     scale_table_data = [
         [Paragraph(f"<b>{h}</b>", td_center) for h in scale_headers],
         [Paragraph(f"<b>{g}</b>", td_center) for g in scale_grades],
     ]
-    # 547.27 / 9 = ~60.8
-    scale_table = Table(scale_table_data, colWidths=[67.27, 60, 60, 60, 60, 60, 60, 60, 60])
+    # 551.27 / 9 = ~61.25
+    scale_table = Table(scale_table_data, colWidths=[71.27, 60, 60, 60, 60, 60, 60, 60, 60])
     scale_table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
         ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#f8fafc")),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING", (0, 0), (-1, -1), 3.5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
     ]))
     story.append(scale_table)
 
