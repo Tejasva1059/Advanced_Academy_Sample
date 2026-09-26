@@ -121,8 +121,8 @@ export const ReportCard: React.FC<ReportCardProps> = ({ data, onPrint, showActio
       {/* A4 Report Card Sheet */}
       <div className="report-card-container bg-white w-full max-w-4xl p-6 sm:p-10 border border-slate-400 rounded-lg shadow-xl text-black font-sans print:border-none print:shadow-none print:p-0 print:m-0 print:max-w-none">
         
-        {/* Yellow Header Banner Arc matching photo */}
-        <div className="w-full h-2.5 print:h-1.5 bg-gradient-to-r from-amber-200 via-amber-300 to-amber-200 rounded-t mb-3 print:mb-1" />
+        {/* Yellow Header Banner matching photo */}
+        <div className="w-full h-2.5 print:h-2 bg-[#f6d860] rounded-t mb-3 print:mb-1" />
 
         {/* 1. Header with CBSE Logo, School Details, School Logo */}
         <div className="flex items-center justify-between border-b border-black pb-3 mb-3 print:pb-1.5 print:mb-1">
@@ -500,16 +500,26 @@ export const ReportCard: React.FC<ReportCardProps> = ({ data, onPrint, showActio
             <tbody>
               <tr className="border-b border-black font-bold">
                 <td className="border-r border-black p-1 print:p-0.5 bg-slate-50/50 w-20 print:w-16">Range (%)</td>
-                {defaultGradingScale.map((item) => (
-                  <td key={item.range} className="border-r border-black p-1 print:p-0.5 last:border-r-0">
+                {defaultGradingScale.map((item, idx) => (
+                  <td
+                    key={item.range}
+                    className={`border-r border-black p-1 print:p-0.5 last:border-r-0 ${
+                      idx === defaultGradingScale.length - 1 ? 'w-28 print:w-24' : ''
+                    }`}
+                  >
                     {item.range}
                   </td>
                 ))}
               </tr>
               <tr className="font-bold">
                 <td className="border-r border-black p-1 print:p-0.5 bg-slate-50/50">Grade</td>
-                {defaultGradingScale.map((item) => (
-                  <td key={item.range} className="border-r border-black p-1 print:p-0.5 last:border-r-0 whitespace-pre-line leading-tight">
+                {defaultGradingScale.map((item, idx) => (
+                  <td
+                    key={item.range}
+                    className={`border-r border-black p-1 print:p-0.5 last:border-r-0 whitespace-pre-line leading-tight ${
+                      idx === defaultGradingScale.length - 1 ? 'w-28 print:w-24 text-[8px] sm:text-[9px] print:text-[6.5px]' : ''
+                    }`}
+                  >
                     {item.grade}
                   </td>
                 ))}

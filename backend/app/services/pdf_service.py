@@ -506,20 +506,22 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
     story.append(Spacer(1, 3))
 
     scale_headers = ["Range (%)", "91-100", "81-90", "71-80", "61-70", "51-60", "41-50", "33-40", "00-32"]
-    scale_grades = ["Grade", "A1", "A2", "B1", "B2", "C1", "C2", "D", "E\n(Needs Improvement)"]
+    scale_grades = ["Grade", "A1", "A2", "B1", "B2", "C1", "C2", "D", "E<br/>(Needs Improvement)"]
 
     scale_table_data = [
         [Paragraph(f"<b>{h}</b>", td_center) for h in scale_headers],
-        [Paragraph(f"<b>{g}</b>", td_center) for g in scale_grades],
+        [Paragraph(f"<b>{g}</b>", ParagraphStyle("ScaleG", parent=td_center, fontSize=7.5, leading=9)) for g in scale_grades],
     ]
-    # 551.27 / 9 = ~61.25
-    scale_table = Table(scale_table_data, colWidths=[71.27, 60, 60, 60, 60, 60, 60, 60, 60])
+    # Total width: 551.27 -> Range: 67.27, 7 cols @ 51 = 357, Last col: 127
+    scale_table = Table(scale_table_data, colWidths=[67.27, 51, 51, 51, 51, 51, 51, 51, 127])
     scale_table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
         ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#f8fafc")),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING", (0, 0), (-1, -1), 3),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("TOPPADDING", (0, 0), (-1, -1), 2.5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5),
+        ("LEFTPADDING", (0, 0), (-1, -1), 1),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 1),
     ]))
     story.append(scale_table)
 
