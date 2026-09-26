@@ -87,6 +87,13 @@ export const ReportCard: React.FC<ReportCardProps> = ({ data, onPrint, showActio
     { range: '00-32', grade: 'E\n(Needs Improvement)' },
   ];
 
+  const formatScore = (val: number | string | undefined | null) => {
+    if (val === undefined || val === null || val === '-') return '-';
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num)) return String(val);
+    return Number.isInteger(num) ? String(num) : num.toFixed(1);
+  };
+
   return (
     <div className="flex flex-col items-center w-full">
       {showActions && (
@@ -353,19 +360,19 @@ export const ReportCard: React.FC<ReportCardProps> = ({ data, onPrint, showActio
 
                     {/* Term I Values */}
                     <td className="border-r border-black p-1 print:p-0.5 print:text-[8px]">
-                      {t1?.periodic_test !== undefined && t1?.periodic_test !== null ? t1.periodic_test : '-'}
+                      {formatScore(t1?.periodic_test)}
                     </td>
                     <td className="border-r border-black p-1 print:p-0.5 print:text-[8px]">
-                      {t1?.notebook !== undefined && t1?.notebook !== null ? t1.notebook : '-'}
+                      {formatScore(t1?.notebook)}
                     </td>
                     <td className="border-r border-black p-1 print:p-0.5 print:text-[8px]">
-                      {t1?.sub_enrichment !== undefined && t1?.sub_enrichment !== null ? t1.sub_enrichment : '-'}
+                      {formatScore(t1?.sub_enrichment)}
                     </td>
                     <td className="border-r border-black p-1 print:p-0.5 print:text-[8px]">
-                      {t1?.term_exam !== undefined && t1?.term_exam !== null ? t1.term_exam : '-'}
+                      {formatScore(t1?.term_exam)}
                     </td>
                     <td className="border-r border-black p-1 print:p-0.5 font-bold print:text-[8px]">
-                      {t1?.obtained_marks !== undefined && t1?.obtained_marks !== null ? t1.obtained_marks : '-'}
+                      {formatScore(t1?.obtained_marks)}
                     </td>
                     <td className="border-r border-black p-1 print:p-0.5 font-bold print:text-[8px]">
                       {t1?.grade || '-'}
@@ -373,19 +380,19 @@ export const ReportCard: React.FC<ReportCardProps> = ({ data, onPrint, showActio
 
                     {/* Term II Values */}
                     <td className="border-r border-black p-1 print:p-0.5 print:text-[8px]">
-                      {t2?.periodic_test !== undefined && t2?.periodic_test !== null ? t2.periodic_test : '-'}
+                      {formatScore(t2?.periodic_test)}
                     </td>
                     <td className="border-r border-black p-1 print:p-0.5 print:text-[8px]">
-                      {t2?.notebook !== undefined && t2?.notebook !== null ? t2.notebook : '-'}
+                      {formatScore(t2?.notebook)}
                     </td>
                     <td className="border-r border-black p-1 print:p-0.5 print:text-[8px]">
-                      {t2?.sub_enrichment !== undefined && t2?.sub_enrichment !== null ? t2.sub_enrichment : '-'}
+                      {formatScore(t2?.sub_enrichment)}
                     </td>
                     <td className="border-r border-black p-1 print:p-0.5 print:text-[8px]">
-                      {t2?.term_exam !== undefined && t2?.term_exam !== null ? t2.term_exam : '-'}
+                      {formatScore(t2?.term_exam)}
                     </td>
                     <td className="border-r border-black p-1 print:p-0.5 font-bold print:text-[8px]">
-                      {t2?.obtained_marks !== undefined && t2?.obtained_marks !== null ? t2.obtained_marks : '-'}
+                      {formatScore(t2?.obtained_marks)}
                     </td>
                     <td className="p-1 print:p-0.5 font-bold print:text-[8px]">
                       {t2?.grade || '-'}

@@ -346,22 +346,33 @@ def generate_report_card_pdf(data: dict) -> io.BytesIO:
     # Dynamic padding for subjects
     subj_pad = 5.0 if len(all_subjects) <= 6 else 3.5
 
+    def fmt_val(v):
+        if v is None or v == "-":
+            return "-"
+        try:
+            f = float(v)
+            if f.is_integer():
+                return str(int(f))
+            return str(round(f, 1))
+        except (ValueError, TypeError):
+            return str(v)
+
     for sname in all_subjects:
         t1 = t1_map.get(sname, {})
         t2 = t2_map.get(sname, {})
 
-        t1_pt = str(t1.get("periodic_test", "-")) if t1.get("periodic_test") is not None else "-"
-        t1_nb = str(t1.get("notebook", "-")) if t1.get("notebook") is not None else "-"
-        t1_se = str(t1.get("sub_enrichment", "-")) if t1.get("sub_enrichment") is not None else "-"
-        t1_te = str(t1.get("term_exam", "-")) if t1.get("term_exam") is not None else "-"
-        t1_tot = str(t1.get("obtained_marks", "-")) if t1.get("obtained_marks") is not None else "-"
+        t1_pt = fmt_val(t1.get("periodic_test"))
+        t1_nb = fmt_val(t1.get("notebook"))
+        t1_se = fmt_val(t1.get("sub_enrichment"))
+        t1_te = fmt_val(t1.get("term_exam"))
+        t1_tot = fmt_val(t1.get("obtained_marks"))
         t1_gr = t1.get("grade", "-") or "-"
 
-        t2_pt = str(t2.get("periodic_test", "-")) if t2.get("periodic_test") is not None else "-"
-        t2_nb = str(t2.get("notebook", "-")) if t2.get("notebook") is not None else "-"
-        t2_se = str(t2.get("sub_enrichment", "-")) if t2.get("sub_enrichment") is not None else "-"
-        t2_te = str(t2.get("term_exam", "-")) if t2.get("term_exam") is not None else "-"
-        t2_tot = str(t2.get("obtained_marks", "-")) if t2.get("obtained_marks") is not None else "-"
+        t2_pt = fmt_val(t2.get("periodic_test"))
+        t2_nb = fmt_val(t2.get("notebook"))
+        t2_se = fmt_val(t2.get("sub_enrichment"))
+        t2_te = fmt_val(t2.get("term_exam"))
+        t2_tot = fmt_val(t2.get("obtained_marks"))
         t2_gr = t2.get("grade", "-") or "-"
 
         row = [
