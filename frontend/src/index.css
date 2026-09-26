@@ -208,14 +208,33 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 10mm;
+    margin: 4mm 6mm;
   }
 
+  html,
   body {
+    margin: 0 !important;
+    padding: 0 !important;
     background-color: white !important;
     color: black !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  #root,
+  .min-h-screen,
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    min-height: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
   }
 
   .no-print,
@@ -233,11 +252,25 @@
 
   .report-card-container {
     box-shadow: none !important;
-    border: 1.5px solid #1e3a8a !important;
+    border: none !important;
     width: 100% !important;
+    max-width: 100% !important;
     margin: 0 !important;
-    padding: 12mm !important;
+    padding: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
     page-break-after: avoid !important;
     break-after: avoid !important;
   }
+
+  table {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 }
+
