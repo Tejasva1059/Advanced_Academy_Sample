@@ -29,7 +29,14 @@ def _build_report_card_dict(student_id: int, exam_id: int, db: Session, current_
 
     exam = db.query(Examination).filter(Examination.id == exam_id).first()
     if not exam:
-        raise HTTPException(status_code=404, detail="Examination not found")
+        exam = db.query(Examination).filter(
+            Examination.academic_session_id == student.academic_session_id,
+            Examination.is_active == True,
+        ).first()
+        if not exam:
+            exam = db.query(Examination).filter(Examination.is_active == True).first()
+        if not exam:
+            raise HTTPException(status_code=404, detail="Examination not found")
 
     session = db.query(AcademicSession).filter(AcademicSession.id == student.academic_session_id).first()
     school = db.query(SchoolSetting).first()

@@ -48,7 +48,16 @@ def get_class_results(
 
     exam_obj = db.query(Examination).filter(Examination.id == exam_id).first()
     if not exam_obj:
-        raise HTTPException(status_code=404, detail="Examination not found")
+        exam_obj = db.query(Examination).filter(
+            Examination.academic_session_id == session_id,
+            Examination.is_active == True,
+        ).first()
+        if not exam_obj:
+            exam_obj = db.query(Examination).filter(Examination.is_active == True).first()
+        if exam_obj:
+            exam_id = exam_obj.id
+        else:
+            raise HTTPException(status_code=404, detail="Examination not found")
 
     session_obj = db.query(AcademicSession).filter(AcademicSession.id == session_id).first()
     if not session_obj:

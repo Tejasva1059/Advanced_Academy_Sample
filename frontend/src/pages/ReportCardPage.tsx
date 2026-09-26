@@ -21,9 +21,9 @@ export const ReportCardPage: React.FC<ReportCardPageProps> = ({
   const [exams, setExams] = useState<Examination[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
 
-  const [selectedClassId, setSelectedClassId] = useState<number>(1);
-  const [selectedStudentId, setSelectedStudentId] = useState<number>(initialStudentId || 1);
-  const [selectedExamId, setSelectedExamId] = useState<number>(initialExamId || 1);
+  const [selectedClassId, setSelectedClassId] = useState<number>(0);
+  const [selectedStudentId, setSelectedStudentId] = useState<number>(initialStudentId || 0);
+  const [selectedExamId, setSelectedExamId] = useState<number>(initialExamId || 0);
 
   const [reportCardData, setReportCardData] = useState<ReportCardData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -68,6 +68,7 @@ export const ReportCardPage: React.FC<ReportCardPageProps> = ({
   // When class changes, fetch students for that class
   useEffect(() => {
     const fetchClassStudents = async () => {
+      if (!selectedClassId || selectedClassId <= 0) return;
       try {
         const res = await apiClient.get(`/students?class_id=${selectedClassId}`);
         setStudents(res.data.students || []);
@@ -98,7 +99,7 @@ export const ReportCardPage: React.FC<ReportCardPageProps> = ({
   // Fetch report card data whenever student or exam changes
   useEffect(() => {
     const fetchReportCard = async () => {
-      if (!selectedStudentId || !selectedExamId) return;
+      if (!selectedStudentId || !selectedExamId || selectedStudentId <= 0 || selectedExamId <= 0) return;
       setLoading(true);
       setError(null);
       try {

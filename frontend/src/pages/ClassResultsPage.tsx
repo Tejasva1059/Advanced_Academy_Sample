@@ -38,8 +38,8 @@ export const ClassResultsPage: React.FC<ClassResultsPageProps> = ({
   const { activeSession, canAccessClass, user, hasPermission } = useAuth();
   const [classes, setClasses] = useState<ClassEntity[]>([]);
   const [exams, setExams] = useState<Examination[]>([]);
-  const [selectedClassId, setSelectedClassId] = useState<number>(initialClassId || 1);
-  const [selectedExamId, setSelectedExamId] = useState<number>(initialExamId || 1);
+  const [selectedClassId, setSelectedClassId] = useState<number>(initialClassId || 0);
+  const [selectedExamId, setSelectedExamId] = useState<number>(initialExamId || 0);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [data, setData] = useState<ClassResultResponse | null>(null);
@@ -82,7 +82,7 @@ export const ClassResultsPage: React.FC<ClassResultsPageProps> = ({
   }, [user]);
 
   const fetchResults = async () => {
-    if (!activeSession || !selectedClassId || !selectedExamId) return;
+    if (!activeSession || !selectedClassId || !selectedExamId || selectedClassId <= 0 || selectedExamId <= 0) return;
     setLoading(true);
     setError(null);
     try {

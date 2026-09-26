@@ -28,7 +28,16 @@ def get_marks_grid(
 
     exam_obj = db.query(Examination).filter(Examination.id == exam_id).first()
     if not exam_obj:
-        raise HTTPException(status_code=404, detail="Examination not found")
+        exam_obj = db.query(Examination).filter(
+            Examination.academic_session_id == session_id,
+            Examination.is_active == True,
+        ).first()
+        if not exam_obj:
+            exam_obj = db.query(Examination).filter(Examination.is_active == True).first()
+        if exam_obj:
+            exam_id = exam_obj.id
+        else:
+            raise HTTPException(status_code=404, detail="Examination not found")
 
     subject_obj = db.query(Subject).filter(Subject.id == subject_id).first()
     if not subject_obj:

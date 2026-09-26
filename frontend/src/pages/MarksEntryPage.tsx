@@ -23,9 +23,9 @@ export const MarksEntryPage: React.FC = () => {
   const [exams, setExams] = useState<Examination[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
 
-  const [selectedClassId, setSelectedClassId] = useState<number>(1);
-  const [selectedExamId, setSelectedExamId] = useState<number>(1);
-  const [selectedSubjectId, setSelectedSubjectId] = useState<number>(1);
+  const [selectedClassId, setSelectedClassId] = useState<number>(0);
+  const [selectedExamId, setSelectedExamId] = useState<number>(0);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<number>(0);
 
   const [gridData, setGridData] = useState<MarkGrid | null>(null);
   const [marksState, setMarksState] = useState<{ [studentId: number]: { marks: string; remarks: string } }>({});
@@ -74,12 +74,14 @@ export const MarksEntryPage: React.FC = () => {
   // 2. Fetch subjects whenever selected class changes
   useEffect(() => {
     const fetchSubjects = async () => {
-      if (!selectedClassId || !activeSession) return;
+      if (!selectedClassId || selectedClassId <= 0 || !activeSession) return;
       try {
         const res = await apiClient.get(`/subjects?class_id=${selectedClassId}&session_id=${activeSession.id}`);
         setSubjects(res.data);
         if (res.data.length > 0) {
           setSelectedSubjectId(res.data[0].id);
+        } else {
+          setSelectedSubjectId(0);
         }
       } catch (err) {
         console.error('Failed to load subjects:', err);
@@ -90,7 +92,7 @@ export const MarksEntryPage: React.FC = () => {
 
   // 3. Fetch grid marks whenever Class, Exam, Subject, or Session changes
   const fetchGrid = async () => {
-    if (!activeSession || !selectedClassId || !selectedExamId || !selectedSubjectId) return;
+    if (!activeSession || !selectedClassId || !selectedExamId || !selectedSubjectId || selectedClassId <= 0 || selectedExamId <= 0 || selectedSubjectId <= 0) return;
     setLoading(true);
     setErrorMessage(null);
     setSaveSuccess(null);
