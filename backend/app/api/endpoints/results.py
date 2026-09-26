@@ -1,7 +1,7 @@
 import json
-from typing import Any
+from typing import Any, Dict, List
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.database.session import get_db
 from app.models import (
     Student,
@@ -10,6 +10,8 @@ from app.models import (
     AcademicSession,
     SchoolSetting,
     ResultConfiguration,
+    Subject,
+    Mark,
     User,
 )
 from app.schemas import (
@@ -63,11 +65,33 @@ def get_class_results(
     if not session_obj:
         raise HTTPException(status_code=404, detail="Academic Session not found")
 
-    students = db.query(Student).filter(
+    students = db.query(Student).options(
+        joinedload(Student.stream_entity)
+    ).filter(
         Student.class_id == class_id,
         Student.academic_session_id == session_id,
         Student.student_status == "ACTIVE",
     ).order_by(Student.roll_number).all()
+
+    # Pre-fetch all active subjects for this class in 1 bulk query
+    all_subjects = db.query(Subject).filter(
+        Subject.class_id == class_id,
+        Subject.is_active == True,
+    ).order_by(Subject.order_index, Subject.id).all()
+
+    # Pre-fetch all marks for this class, exam, and session in 1 bulk query
+    all_marks = db.query(Mark).filter(
+        Mark.class_id == class_id,
+        Mark.exam_id == exam_obj.id,
+        Mark.academic_session_id == session_id,
+    ).all()
+
+    # Group marks by student_id -> subject_id -> Mark
+    marks_map_by_student: Dict[int, Dict[int, Mark]] = {}
+    for m in all_marks:
+        if m.student_id not in marks_map_by_student:
+            marks_map_by_student[m.student_id] = {}
+        marks_map_by_student[m.student_id][m.subject_id] = m
 
     config = ResultCalculationService.get_active_config(db, session_id=session_id)
 
@@ -81,10 +105,12 @@ def get_class_results(
     evaluated_count = 0
 
     for st in students:
-        res = ResultCalculationService.calculate_student_exam_result(
-            db=db,
+        student_marks = marks_map_by_student.get(st.id, {})
+        res = ResultCalculationService.calculate_student_exam_result_preloaded(
             student=st,
             exam=exam_obj,
+            subjects=all_subjects,
+            marks_by_subject=student_marks,
             config=config,
         )
 
@@ -153,7 +179,11 @@ def get_student_result_profile(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
-    st = db.query(Student).filter(Student.id == student_id).first()
+    st = db.query(Student).options(
+        joinedload(Student.class_entity),
+        joinedload(Student.stream_entity),
+        joinedload(Student.academic_session),
+    ).filter(Student.id == student_id).first()
     if not st:
         raise HTTPException(status_code=404, detail="Student not found")
 
@@ -172,12 +202,30 @@ def get_student_result_profile(
         Examination.is_active == True,
     ).order_by(Examination.id).all()
 
+    # Pre-fetch subjects for the student's class in 1 query
+    all_subjects = db.query(Subject).filter(
+        Subject.class_id == st.class_id,
+        Subject.is_active == True,
+    ).order_by(Subject.order_index, Subject.id).all()
+
+    # Pre-fetch all marks for this student across all exams in 1 query
+    all_student_marks = db.query(Mark).filter(
+        Mark.student_id == student_id
+    ).all()
+
+    marks_by_exam: Dict[int, Dict[int, Mark]] = {}
+    for m in all_student_marks:
+        if m.exam_id not in marks_by_exam:
+            marks_by_exam[m.exam_id] = {}
+        marks_by_exam[m.exam_id][m.subject_id] = m
+
     exam_results = []
     for ex in exams:
-        calc = ResultCalculationService.calculate_student_exam_result(
-            db=db,
+        calc = ResultCalculationService.calculate_student_exam_result_preloaded(
             student=st,
             exam=ex,
+            subjects=all_subjects,
+            marks_by_subject=marks_by_exam.get(ex.id, {}),
             config=config,
         )
         exam_results.append(ExamResultSummary(

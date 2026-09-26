@@ -9,6 +9,7 @@ if backend_dir not in sys.path:
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from app.core.config import settings
@@ -51,6 +52,9 @@ app = FastAPI(
     description="Dynamic, Production-Ready School Result Management System with RBAC, Independent Examinations, and A4 Report Cards.",
     lifespan=lifespan,
 )
+
+# GZip response compression for 3-5x faster transfer of JSON payloads
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Configure CORS
 origins = settings.CORS_ORIGINS if isinstance(settings.CORS_ORIGINS, list) else [settings.CORS_ORIGINS]

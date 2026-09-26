@@ -1,6 +1,6 @@
 from typing import Optional, Any
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from app.database.session import get_db
 from app.models import Student, ClassEntity, StreamEntity, AcademicSession, User
@@ -23,7 +23,11 @@ def get_students(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
-    query = db.query(Student)
+    query = db.query(Student).options(
+        joinedload(Student.class_entity),
+        joinedload(Student.stream_entity),
+        joinedload(Student.academic_session),
+    )
 
     if class_id:
         query = query.filter(Student.class_id == class_id)
@@ -119,7 +123,11 @@ def create_student(
 
 @router.get("/{student_id}", response_model=StudentResponse)
 def get_student(student_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> Any:
-    st = db.query(Student).filter(Student.id == student_id).first()
+    st = db.query(Student).options(
+        joinedload(Student.class_entity),
+        joinedload(Student.stream_entity),
+        joinedload(Student.academic_session),
+    ).filter(Student.id == student_id).first()
     if not st:
         raise HTTPException(status_code=404, detail="Student not found")
 

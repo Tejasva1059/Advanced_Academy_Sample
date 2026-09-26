@@ -1,6 +1,6 @@
 from typing import List, Any
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.database.session import get_db
 from app.models import Teacher, TeacherAssignment, ClassEntity, Subject, User
 from app.schemas import (
@@ -17,7 +17,9 @@ router = APIRouter(tags=["Teachers"])
 
 @router.get("/teachers", response_model=List[TeacherResponse])
 def get_teachers(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> Any:
-    teachers = db.query(Teacher).filter(Teacher.is_active == True).all()
+    teachers = db.query(Teacher).options(
+        joinedload(Teacher.assignments).joinedload(TeacherAssignment.class_entity)
+    ).filter(Teacher.is_active == True).all()
     results = []
     for t in teachers:
         classes = [a.class_entity.class_name for a in t.assignments if a.class_entity and a.is_active]

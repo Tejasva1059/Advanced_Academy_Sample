@@ -99,7 +99,6 @@ def save_bulk_marks(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     # 1. STRICT BACKEND AUTHORIZATION:
-    # Teacher assigned to Class 5 attempting to update Class 6 -> 403 Forbidden!
     check_teacher_class_access(current_user, class_id=payload.class_id, is_write=True, db=db)
 
     subject_obj = db.query(Subject).filter(Subject.id == payload.subject_id).first()
@@ -107,11 +106,27 @@ def save_bulk_marks(
         raise HTTPException(status_code=404, detail="Subject not found")
 
     max_marks = subject_obj.maximum_marks
+    student_ids = [item.student_id for item in payload.marks]
+
+    # Pre-fetch all students in 1 query
+    students_in_batch = {
+        st.id: st for st in db.query(Student).filter(Student.id.in_(student_ids)).all()
+    }
+
+    # Pre-fetch all existing marks for this batch in 1 query
+    existing_marks_map = {
+        m.student_id: m for m in db.query(Mark).filter(
+            Mark.student_id.in_(student_ids),
+            Mark.subject_id == payload.subject_id,
+            Mark.exam_id == payload.exam_id,
+            Mark.academic_session_id == payload.academic_session_id,
+        ).all()
+    }
+
     saved_count = 0
 
     for item in payload.marks:
-        # Validate student belongs to this class
-        st = db.query(Student).filter(Student.id == item.student_id).first()
+        st = students_in_batch.get(item.student_id)
         if not st or st.class_id != payload.class_id:
             raise HTTPException(
                 status_code=400,
@@ -130,30 +145,12 @@ def save_bulk_marks(
                 detail=f"Obtained marks ({item.obtained_marks}) cannot exceed maximum marks ({max_marks}) for student {st.student_name}",
             )
 
-        # Upsert mark record
-        existing = db.query(Mark).filter(
-            Mark.student_id == item.student_id,
-            Mark.subject_id == payload.subject_id,
-            Mark.exam_id == payload.exam_id,
-            Mark.academic_session_id == payload.academic_session_id,
-        ).first()
-
+        existing = existing_marks_map.get(item.student_id)
         if existing:
             old_val = str(existing.obtained_marks)
             existing.obtained_marks = item.obtained_marks
             existing.remarks = item.remarks
             existing.maximum_marks = max_marks
-            db.commit()
-            log_audit(
-                db=db,
-                action="MARKS_UPDATED",
-                entity="Mark",
-                entity_id=str(existing.id),
-                old_value=old_val,
-                new_value=str(item.obtained_marks),
-                user_id=current_user.id,
-                username=current_user.username,
-            )
         else:
             new_mark = Mark(
                 student_id=item.student_id,
@@ -166,18 +163,21 @@ def save_bulk_marks(
                 remarks=item.remarks,
             )
             db.add(new_mark)
-            db.commit()
-            db.refresh(new_mark)
-            log_audit(
-                db=db,
-                action="MARKS_ENTERED",
-                entity="Mark",
-                entity_id=str(new_mark.id),
-                new_value=str(item.obtained_marks),
-                user_id=current_user.id,
-                username=current_user.username,
-            )
+
         saved_count += 1
+
+    # Single commit for all changes in 1 transaction
+    db.commit()
+
+    log_audit(
+        db=db,
+        action="BULK_MARKS_SAVED",
+        entity="Mark",
+        entity_id=f"Class:{payload.class_id}-Exam:{payload.exam_id}-Subj:{payload.subject_id}",
+        new_value=f"Saved {saved_count} marks entries",
+        user_id=current_user.id,
+        username=current_user.username,
+    )
 
     return {
         "message": f"Successfully processed {saved_count} marks records",

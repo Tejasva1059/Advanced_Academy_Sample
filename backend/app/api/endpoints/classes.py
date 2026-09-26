@@ -1,6 +1,6 @@
 from typing import List, Any
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from app.database.session import get_db
 from app.models import ClassEntity, Student, Subject, TeacherAssignment, User
@@ -42,7 +42,9 @@ def get_class_details(class_id: int, db: Session = Depends(get_db), current_user
         raise HTTPException(status_code=404, detail="Class not found")
 
     subjects = db.query(Subject).filter(Subject.class_id == class_id, Subject.is_active == True).all()
-    assignments = db.query(TeacherAssignment).filter(TeacherAssignment.class_id == class_id, TeacherAssignment.is_active == True).all()
+    assignments = db.query(TeacherAssignment).options(
+        joinedload(TeacherAssignment.teacher)
+    ).filter(TeacherAssignment.class_id == class_id, TeacherAssignment.is_active == True).all()
 
     return {
         "id": c.id,

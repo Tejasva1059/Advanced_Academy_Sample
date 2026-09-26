@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Response
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.database.session import get_db
 from app.models import Student, Examination, SchoolSetting, AcademicSession, User
 from app.schemas import (
@@ -20,7 +20,10 @@ router = APIRouter(prefix="/report-cards", tags=["Report Cards"])
 
 
 def _build_report_card_dict(student_id: int, exam_id: int, db: Session, current_user: User) -> dict:
-    student = db.query(Student).filter(Student.id == student_id).first()
+    student = db.query(Student).options(
+        joinedload(Student.class_entity),
+        joinedload(Student.stream_entity),
+    ).filter(Student.id == student_id).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 

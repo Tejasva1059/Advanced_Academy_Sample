@@ -116,6 +116,10 @@ def seed_database(db: Session, force_reset: bool = False):
     independent marks for all 120 students across both exams, roles, permissions,
     and seed users.
     """
+    # Fast-path check: If database is already seeded, skip immediately for instantaneous startup
+    if db.query(Student).first() and db.query(User).first() and db.query(AcademicSession).first():
+        return
+
     # 1. School Settings
     school = db.query(SchoolSetting).first()
     if not school:
